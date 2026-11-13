@@ -1,0 +1,92 @@
+{
+  "Apex-35B-V1.0-Q4": {
+    "file": "Apex-35B-V1.0_Q4_K_M.html",
+    "digest": "1dff1ef66241485d5a4d6c74339239ec5db9bdae390b44aac0be060d061b2693",
+    "redacted": true
+  },
+  "Flint-Q4": {
+    "file": "flint_UD-Q4_K_XL.html",
+    "digest": "17095a81d72471c5092f3c94c44f46e81fe1959ae6c517fd8b74b973a56552d9",
+    "redacted": true
+  },
+  "MiniCPM-V-4.7-35B-A3B-Q4": {
+    "file": "MiniCPM-V-4.7-35B-A3B_Q4_K_M.html",
+    "digest": "bc23797cb2ee1b19942d49dc4e5d81132deceef6064272d8d3bed52f7cf59f0b",
+    "redacted": true
+  },
+  "Nemotron-3.5-Lightning-30B-A3B-UD-Q4_K_XL": {
+    "file": "NVIDIA-Nemotron-3.5-Lightning-30B-A3B_UD-Q4_K_XL.html",
+    "digest": "0bc12d154c1896001c752554fba29e6ebfe7d22434ad4d3a12389e139d6855a6",
+    "redacted": true
+  },
+  "Qwen-AgentWorld-35B-A3B-UD-Q4_K_XL": {
+    "file": "Qwen-AgentWorld-35B-A3B_UD-Q4_K_XL.html",
+    "digest": "678240abccd2f3c9ebb51f633e66a43a7d7b160ad398db1f6ba4f0fe9027da93",
+    "redacted": true
+  },
+  "Qwen3.8-27B-UD-Q2_K_XL": {
+    "file": "Qwen3.8-27B_UD-Q2_K_XL.html",
+    "digest": "b3e59801a6d39009b9dcded8a1f8b01e3543c9924ea0de7c5e6ddd9babad39e5",
+    "redacted": true
+  },
+  "Qwen3.8-27B-UD-Q2_K_XL_v3.1": {
+    "file": "Qwen3.8-27B_UD-Q2_K_XL-2.html",
+    "digest": "37881cd4349af5bc5fc6af05223adedc5d2e77b4a9b9ee7640eb81834950421f",
+    "redacted": true
+  },
+  "Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M": {
+    "file": "Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00001-of-00002.gguf.html",
+    "digest": "e74a12ecef6e7576545b917921ed25587bdd4e915a3d518173d38123ecd98192",
+    "redacted": true
+  },
+  "Qwen3.8-Flash-Next-UD-IQ3_XXS": {
+    "file": "Qwen3.8-Flash-Next_UD-IQ3_XXS.html",
+    "digest": "19f189dbc47ae95781046f70520a512b5c58274bd78310e6c64f5fa237944dfd",
+    "redacted": true
+  },
+  "XYZAILab_XYZ-Aquila-mini-Q5_K_M": {
+    "file": "XYZAILab_XYZ-Aquila-mini_Q5_K_M.html",
+    "digest": "509cc1ed908bb260851c8d6a156f1df1ab21ebb1633aaeea8c4f3c5f7a7ff39a",
+    "redacted": true
+  },
+  "gemma-4-31B-it-UD-Q4_K_XL": {
+    "file": "gemma-4-31B-it_UD-Q4_K_XL.html",
+    "digest": "cc3c167ee59f6e36adb65481aea152d4ef967ba73eb9bfc659e208c081620c24",
+    "redacted": true
+  },
+  "gemma26b_Q6": {
+    "file": "gemma-4-26B-A4B-it_UD-Q6_K_XL.html",
+    "digest": "1511423a90842a6fdae82fb87772bbd33bf4570c6f7e72156b300f0708d280f1",
+    "redacted": true
+  },
+  "gpt-oss-20b-F16": {
+    "file": "gpt-oss-20b_F16.html",
+    "digest": "a14628629d79af10de95123053a1312e5dc0a650c3dbcf9bfda74deaa27ce5f3",
+    "redacted": true
+  },
+  "muse_glimmer_30b_q4": {
+    "file": "Muse-Glimmer-30B_UD-Q4_K_XL.html",
+    "digest": "388e79052d4f944bf1ae4ee7c9426150dc7735d648d14889ae05f698e35364ee",
+    "redacted": true
+  },
+  "nemotron_35_bolt": {
+    "file": "NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.html",
+    "digest": "987c7f5bc602ac9ba35eb0318d2a3a7edc8108eb71c3531eed7060df5274cafc",
+    "redacted": true
+  },
+  "ornith1.5_35b_q4": {
+    "file": "Ornith-1.5-35B-A3B_Q4_K_M.html",
+    "digest": "c9a6f99c89926fd0c406a522a48b98df9863b2252d117bca4b8d89e07db28077",
+    "redacted": true
+  },
+  "qwen3.6_35b_q4": {
+    "file": "Qwen3.6-35B-A3B_UD-Q4_K_XL.html",
+    "digest": "391987a9fc4d62cad0ac167bbc92391e9a42fcc636d466233aa3ca74d0463d17",
+    "redacted": true
+  },
+  "qwen3.8_27b_Q4": {
+    "file": "Qwen3.8-27B_UD-Q4_K_XL.html",
+    "digest": "5bd6765a0c251d65ea40d6b3f4ee6b3b09c6bea36f428937fc52019dc28eae5a",
+    "redacted": true
+  }
+}
