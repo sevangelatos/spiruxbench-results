@@ -7,7 +7,7 @@ from the run's report.json via harness/report.py, with file links rebased to
 ../runs/<run>/ so they resolve from this directory.
 
 A run needs a re-render when the SHA-256 of its runs/<run>/report.json, or
-the --redact choice, differs from what is recorded in run_map.json, or the
+the redact choice, differs from what is recorded in run_map.json, or the
 stored page is missing. Nothing
 is written until the user confirms each individual change, so a partially
 written run can be skipped and picked up on a later pass. At each prompt you
@@ -20,9 +20,10 @@ Every non-dry pass also rewrites trajectories.html, three linked graphs
 listed in the index. The page loads the vendored plotly.js bundle
 (trajectories.PLOTLY_BUNDLE) from this directory and needs no network.
 
-With --redact the stored page drops the embedded prompt, the agent logs,
+By default the stored page drops the embedded prompt, the agent logs,
 and the links to the prompt, session log, workspace, and log files, so it
-can be shared without the run's task materials.
+can be shared without the run's task materials. Pass --no-redact to keep
+those parts (for example when the run is already public or is not shared).
 
 An optional runs/<run>/title.txt customizes the displayed name: line 1 is
 the title, the rest of the file is the subtitle. It is shown in the index
@@ -30,10 +31,10 @@ row and in the stored report page, and its contents are part of the
 change-detection digest.
 
 Usage:
-    python3 summary/update_summary.py             # interactive
+    python3 summary/update_summary.py             # interactive (redacted by default)
     python3 summary/update_summary.py --dry-run   # report only, write nothing
     python3 summary/update_summary.py --yes       # accept all changes
-    python3 summary/update_summary.py --redact    # store a redacted page
+    python3 summary/update_summary.py --no-redact # keep prompts, logs, and task links
 
 Options --runs-dir and --summary-dir override the default locations, which
 are resolved relative to this script: runs/ in the repository root and the
@@ -262,7 +263,7 @@ def render_index(rows: list) -> str:
     """Render index.html, ranked by final score.
 
     Row links point at the stored artifacts in this directory, so the directory
-    is self-contained and a --redact page is never bypassed. A run stays listed
+    is self-contained and a redacted page is never bypassed. A run stays listed
     even when its copy is out of date or missing.
     """
     rows = sorted(rows, key=lambda r: -r["score"])
@@ -376,9 +377,11 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="show changes without writing")
     ap.add_argument("--yes", "-y", action="store_true",
                     help="accept every new or updated run")
-    ap.add_argument("--redact", action="store_true",
-                    help="store a page without the prompt, logs, and task links")
+    ap.add_argument("--no-redact", action="store_true",
+                    help="keep the prompt, logs, and task links (do not redact)")
     args = ap.parse_args()
+    # Redaction is the default; --no-redact opts out and keeps the sensitive parts.
+    redact = not args.no_redact
 
     if not os.path.isdir(args.runs_dir):
         print(f"runs directory not found: {args.runs_dir}", file=sys.stderr)
@@ -420,7 +423,7 @@ def main() -> int:
         # A missing stored page is treated as stale even when the map still
         # matches, so deleting artifacts restores them on the next pass.
         up_to_date = (entry is not None and entry["digest"] == digests[run_id]
-                      and entry["redacted"] == args.redact
+                      and entry["redacted"] == redact
                       and os.path.isfile(os.path.join(args.summary_dir, entry["file"])))
         if up_to_date:
             totals["artifact"] = entry["file"]
@@ -460,12 +463,12 @@ def main() -> int:
         else:
             page = report.render_html(reports[run_id], Path(run_dir),
                                       link_base=f"../runs/{run_id}/",
-                                      redact=args.redact)
+                                      redact=redact)
             report.atomic_write(Path(args.summary_dir) / name, page)
             print(f"  wrote {name}")
 
         mapping[run_id] = {"file": name, "digest": digests[run_id],
-                           "redacted": args.redact}
+                           "redacted": redact}
         taken.add(name)
         index_rows.append(totals)
         rendered += 1
