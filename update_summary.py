@@ -174,21 +174,21 @@ def discover_runs(runs_dir: str) -> list:
     return runs
 
 
-def read_totals(report: dict, run_id: str) -> dict:
+def read_totals(report_data: dict, run_id: str) -> dict:
     """Return the index row data for a run, zeroing any null totals.
 
     run_id comes from the runs/ directory name, which is also the map key,
     the index row's link text, and the base of the stored page's file links,
     so rows stay addressable even if report.json disagrees about its own id.
     """
-    totals = report.get("totals", {})
+    totals = report_data.get("totals", {})
     # report.py writes null for final_score_pct when the weight total is zero.
-    title = report.get("title") or {}
+    title = report_data.get("title") or {}
     return {
         "run_id": run_id,
         "title": title.get("title") or "",
         "subtitle": title.get("subtitle") or "",
-        "model": (report.get("model") or {}).get("name") or "unknown",
+        "model": (report_data.get("model") or {}).get("name") or "unknown",
         "challenges": int(totals.get("challenges") or 0),
         "passed": int(totals.get("passed") or 0),
         "failed": int(totals.get("failed") or 0),
@@ -198,6 +198,8 @@ def read_totals(report: dict, run_id: str) -> dict:
         "pct": float(totals.get("final_score_pct") or 0.0) * 100.0,
         # None when no task in the run has session logs.
         "avg_tokens": totals.get("avg_context_tokens_per_task"),
+        # Recomputed from challenges when the report predates this metric.
+        "avg_time": report.avg_duration_s(report_data),
     }
 
 
@@ -270,11 +272,14 @@ def render_index(rows: list) -> str:
         run_label = r["title"] or r["run_id"]
         sub_label = r["subtitle"] or r["model"]
         # Sorted by the visible label; escaped so quotes still parse after readback.
+        # data-s columns must line up with the table headers in order.
         avg = r["avg_tokens"] if r["avg_tokens"] is not None else -1
+        avg_time = r["avg_time"] if r["avg_time"] is not None else -1
         data = html.escape(json.dumps([i, run_label, r["passed"], r["failed"],
-                                      r["error"], round(r["score"], 2), avg,
+                                      r["error"], round(r["score"], 2), avg, avg_time,
                                       round(r["pct"], 2)]))
         bar = round(r["pct"], 1)
+        avg_time_str = f"{report.compact(r['avg_time'])}s" if r['avg_time'] is not None else '—'
         body.append(
             f'<tr data-s="{data}"><td>{i}</td>\n'
             f'<td><a href="{href}">{html.escape(run_label)}</a>'
@@ -283,6 +288,7 @@ def render_index(rows: list) -> str:
             f'<td class="n">{r["error"]}</td>\n'
             f'<td class="n">{r["score"]:.2f} <span class="d">/ {r["max_possible"]:.2f}</span></td>\n'
             f'<td class="n">{report.compact(r["avg_tokens"])}</td>\n'
+            f'<td class="n">{avg_time_str}</td>\n'
             f'<td class="bar"><div><i style="width:{bar}%"></i></div><b>{bar:.1f}%</b></td></tr>'
         )
     spans = {r["challenges"] for r in rows}
@@ -311,7 +317,7 @@ a{{color:#58a6ff;text-decoration:none}}a:hover{{text-decoration:underline}}
 </style></head><body>
 <h1>AD-100 run scores</h1>
 <p>Final score = challenge weight × partial score, {scale}. Click a header to sort. <a href="{TRAJECTORIES_FILE}">Trajectories &rarr;</a></p>
-<table id="t"><thead><tr><th>#</th><th>Run</th><th class="n">Passed</th><th class="n">Failed</th><th class="n">Error</th><th class="n">Final score</th><th class="n">Avg tokens/task</th><th>% of max</th></tr></thead>
+<table id="t"><thead><tr><th>#</th><th>Run</th><th class="n">Passed</th><th class="n">Failed</th><th class="n">Error</th><th class="n">Final score</th><th class="n">Avg tokens/task</th><th class="n">Avg time/task</th><th>% of max</th></tr></thead>
 <tbody>
 {chr(10).join(body)}
 </tbody></table>
