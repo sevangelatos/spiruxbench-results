@@ -273,22 +273,34 @@ def render_index(rows: list) -> str:
         sub_label = r["subtitle"] or r["model"]
         # Sorted by the visible label; escaped so quotes still parse after readback.
         # data-s columns must line up with the table headers in order.
-        avg = r["avg_tokens"] if r["avg_tokens"] is not None else -1
-        avg_time = r["avg_time"] if r["avg_time"] is not None else -1
+        # Sort keys use -1 when the raw value is absent so undefined ratios sort first.
+        score = r["score"]
+        avg_tokens = r["avg_tokens"]
+        avg_time = r["avg_time"]
+        avg = avg_tokens if avg_tokens is not None else -1
+        avg_time_key = avg_time if avg_time is not None else -1
+        # Derived efficiency ratios (index-only); -1 when the divisor is absent.
+        score_per_sec = score / avg_time if avg_time else -1          # score / avg time/task
+        score_per_1k = score * 1000.0 / avg_tokens if avg_tokens else -1  # score / 1k tokens
+        # data-s order must match the <th> order: pct stays last (% of max).
         data = html.escape(json.dumps([i, run_label, r["passed"], r["failed"],
-                                      r["error"], round(r["score"], 2), avg, avg_time,
-                                      round(r["pct"], 2)]))
+                                      r["error"], round(score, 2), avg, avg_time_key,
+                                      score_per_sec, score_per_1k, round(r["pct"], 2)]))
         bar = round(r["pct"], 1)
-        avg_time_str = f"{report.compact(r['avg_time'])}s" if r['avg_time'] is not None else '—'
+        avg_time_str = f"{report.compact(avg_time)}s" if avg_time is not None else '—'
+        score_per_sec_str = f"{score / avg_time:.3f}" if avg_time else '—'
+        score_per_1k_str = f"{score * 1000 / avg_tokens:.3f}" if avg_tokens else '—'
         body.append(
             f'<tr data-s="{data}"><td>{i}</td>\n'
             f'<td><a href="{href}">{html.escape(run_label)}</a>'
             f'<div class="m">{html.escape(sub_label)}</div></td>\n'
             f'<td class="n">{r["passed"]}</td><td class="n">{r["failed"]}</td>'
             f'<td class="n">{r["error"]}</td>\n'
-            f'<td class="n">{r["score"]:.2f} <span class="d">/ {r["max_possible"]:.2f}</span></td>\n'
-            f'<td class="n">{report.compact(r["avg_tokens"])}</td>\n'
+            f'<td class="n">{score:.2f} <span class="d">/ {r["max_possible"]:.2f}</span></td>\n'
+            f'<td class="n">{report.compact(avg_tokens)}</td>\n'
             f'<td class="n">{avg_time_str}</td>\n'
+            f'<td class="n">{score_per_sec_str}</td>\n'
+            f'<td class="n">{score_per_1k_str}</td>\n'
             f'<td class="bar"><div><i style="width:{bar}%"></i></div><b>{bar:.1f}%</b></td></tr>'
         )
     spans = {r["challenges"] for r in rows}
@@ -316,8 +328,8 @@ a{{color:#58a6ff;text-decoration:none}}a:hover{{text-decoration:underline}}
 .bar i{{display:block;height:100%;background:#3fb950;border-radius:4px}}
 </style></head><body>
 <h1>AD-100 run scores</h1>
-<p>Final score = challenge weight × partial score, {scale}. Click a header to sort. <a href="{TRAJECTORIES_FILE}">Trajectories &rarr;</a></p>
-<table id="t"><thead><tr><th>#</th><th>Run</th><th class="n">Passed</th><th class="n">Failed</th><th class="n">Error</th><th class="n">Final score</th><th class="n">Avg tokens/task</th><th class="n">Avg time/task</th><th>% of max</th></tr></thead>
+<p>Final score = challenge weight × partial score, {scale}. Click a header to sort. <b>Score / s</b> and <b>Score / 1k tok</b> are derived from score, avg time/task, and avg tokens/task. <a href="{TRAJECTORIES_FILE}">Trajectories &rarr;</a></p>
+<table id="t"><thead><tr><th>#</th><th>Run</th><th class="n">Passed</th><th class="n">Failed</th><th class="n">Error</th><th class="n">Final score</th><th class="n">Avg tokens/task</th><th class="n">Avg time/task</th><th class="n">Score / s</th><th class="n">Score / 1k tok</th><th>% of max</th></tr></thead>
 <tbody>
 {chr(10).join(body)}
 </tbody></table>
