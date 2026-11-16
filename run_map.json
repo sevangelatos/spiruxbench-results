@@ -44,6 +44,11 @@
     "digest": "45ceb18d23342288dfc50f9c758efc7fe4cf3358c903ed9705908067c450150d",
     "redacted": true
   },
+  "Swift-1.5-Qwen3.8-27B-IQ4_NL_xhigh": {
+    "file": "Swift-1.5-Qwen3.8-27B_IQ4_NL.html",
+    "digest": "b042f70521b741df06ec28bb46b2abd4c44652c34e89bf114de70b0cb9305945",
+    "redacted": true
+  },
   "XYZAILab_XYZ-Aquila-mini-Q5_K_M": {
     "file": "XYZAILab_XYZ-Aquila-mini_Q5_K_M.html",
     "digest": "b84d2b439a809dca55c28541ef4ac177a949c68aaa3b4b82b07dcaeef1d313ad",
@@ -87,6 +92,11 @@
   "qwen3.8_27b_Q4": {
     "file": "Qwen3.8-27B_UD-Q4_K_XL.html",
     "digest": "70bcb3495873a3a0de3a2352a116d7a45b616478e00e2d0aed1861fc608012de",
+    "redacted": true
+  },
+  "qwen3.8_27b_Q4_medium": {
+    "file": "Qwen3.8-27B_UD-Q4_K_XL-2.html",
+    "digest": "b69f3a96ad0aa820cf550ab7c56c0171008db222c2ace0ae1e397f9fe23e9d5a",
     "redacted": true
   }
 }
