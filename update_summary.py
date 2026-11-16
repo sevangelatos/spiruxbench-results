@@ -25,10 +25,13 @@ and the links to the prompt, session log, workspace, and log files, so it
 can be shared without the run's task materials. Pass --no-redact to keep
 those parts (for example when the run is already public or is not shared).
 
-An optional runs/<run>/title.txt customizes the displayed name: line 1 is
-the title, the rest of the file is the subtitle. It is shown in the index
-row and in the stored report page, and its contents are part of the
-change-detection digest.
+An optional runs/<run>/title.json customizes the displayed name: a JSON
+object with a required "title", an optional "subtitle", and an optional
+"logo" naming a file in this directory's assets/ folder. It is shown in the
+index row and in the stored report page, and its contents are part of the
+change-detection digest. For a run without a title.json, the summary uses
+an in-memory placeholder (title = run directory name, subtitle = model name,
+logo = best lab match or generic.svg) without modifying the run directory.
 
 Usage:
     python3 summary/update_summary.py             # interactive (redacted by default)
@@ -78,23 +81,19 @@ def totals_path(run_dir: str) -> str:
     return os.path.join(run_dir, "report.json")
 
 
-def load_report(run_dir: str) -> tuple[dict, str]:
-    """Return (parsed report.json, digest of its bytes plus title.txt bytes).
+def load_report(run_dir: str) -> tuple[dict, bytes]:
+    """Return (parsed report.json, raw file bytes) for a run.
 
-    The optional title.txt is folded into the digest so editing the display
-    title of an existing run triggers a re-render.
+    The raw bytes let the caller fold in the title file's bytes for the
+    change-detection digest, so editing the display title of an existing run
+    triggers a re-render.
     """
     with open(totals_path(run_dir), "rb") as fh:
         raw = fh.read()
     data = json.loads(raw)
     if not isinstance(data, dict):
         raise ValueError(f"{totals_path(run_dir)} must contain an object")
-    title_bytes = b""
-    title_path = os.path.join(run_dir, "title.txt")
-    if os.path.isfile(title_path):
-        with open(title_path, "rb") as fh:
-            title_bytes = fh.read()
-    return data, hashlib.sha256(raw + title_bytes).hexdigest()
+    return data, raw
 
 
 def propose_filename(model: str, run_id: str) -> str:
@@ -114,6 +113,8 @@ def existing_artifacts(summary_dir: str) -> set:
     These names are claimed too, so a hand-placed file the script does not own
     is never overwritten.
     """
+    if not os.path.isdir(summary_dir):
+        return set()
     return {f for f in os.listdir(summary_dir)
             if f.endswith(".html") and f != INDEX_FILE}
 
@@ -189,6 +190,7 @@ def read_totals(report_data: dict, run_id: str) -> dict:
         "run_id": run_id,
         "title": title.get("title") or "",
         "subtitle": title.get("subtitle") or "",
+        "logo": title.get("logo") or "",
         "model": (report_data.get("model") or {}).get("name") or "unknown",
         "challenges": int(totals.get("challenges") or 0),
         "passed": int(totals.get("passed") or 0),
@@ -259,6 +261,17 @@ def confirm_run(run_id: str, state: str, name: str, mode: str) -> str | None:
     return ask_name(f"  store {state} report for {run_id}?", default=name)
 
 
+def title_for_summary(run_dir: str, run_id: str, model: str) -> tuple[dict | None, bytes]:
+    """Return the title override and digest bytes without modifying the run."""
+    path = os.path.join(run_dir, "title.json")
+    if os.path.isfile(path):
+        with open(path, "rb") as fh:
+            raw = fh.read()
+        return report.load_title_file(Path(run_dir)), raw
+    title = report.placeholder_title(run_id, model)
+    return title, (json.dumps(title, indent=2) + "\n").encode()
+
+
 def render_index(rows: list) -> str:
     """Render index.html, ranked by final score.
 
@@ -283,17 +296,25 @@ def render_index(rows: list) -> str:
         # Derived efficiency ratios (index-only); -1 when the divisor is absent.
         score_per_sec = score / avg_time if avg_time else -1          # score / avg time/task
         score_per_1k = score * 1000.0 / avg_tokens if avg_tokens else -1  # score / 1k tokens
+        logo = r["logo"] or report.get_logo(run_label or sub_label) \
+            or report.GENERIC_LOGO
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", logo):
+            logo = report.GENERIC_LOGO
         # data-s order must match the <th> order: pct stays last (% of max).
+        # Index 11 holds the chart-bar icon and is not a sortable column.
         data = html.escape(json.dumps([i, run_label, r["passed"], r["failed"],
                                       r["error"], round(score, 2), avg, avg_time_key,
-                                      score_per_sec, score_per_1k, round(r["pct"], 2)]))
+                                      score_per_sec, score_per_1k, round(r["pct"], 2),
+                                      logo]))
         bar = round(r["pct"], 1)
         avg_time_str = f"{report.compact(avg_time)}s" if avg_time is not None else '—'
         score_per_sec_str = f"{score / avg_time:.3f}" if avg_time else '—'
         score_per_1k_str = f"{score * 1000 / avg_tokens:.3f}" if avg_tokens else '—'
+        logo_img = f'<img src="assets/{html.escape(logo, quote=True)}" width="16" height="16" style="flex-shrink:0">'
         body.append(
             f'<tr data-s="{data}"><td>{i}</td>\n'
-            f'<td><a href="{href}">{html.escape(run_label)}</a>'
+            f'<td style="display:flex;align-items:center;gap:.5rem">{logo_img}'
+            f'<a href="{href}">{html.escape(run_label)}</a>'
             f'<div class="m">{html.escape(sub_label)}</div></td>\n'
             f'<td class="n">{r["passed"]}</td><td class="n">{r["failed"]}</td>'
             f'<td class="n">{r["error"]}</td>\n'
@@ -327,22 +348,71 @@ a{{color:#58a6ff;text-decoration:none}}a:hover{{text-decoration:underline}}
 .m{{color:#8b949e;font-size:.78rem;white-space:pre-line}}.d{{color:#8b949e}}
 .bar{{min-width:180px}}.bar div{{display:inline-block;width:110px;height:8px;background:#21262d;border-radius:4px;vertical-align:middle;margin-right:.5rem}}
 .bar i{{display:block;height:100%;background:#3fb950;border-radius:4px}}
+.top{{margin:0 0 1rem}}
+.top a{{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .75rem;border:1px solid #58a6ff;border-radius:999px;background:#388bfd1a;font-weight:600}}.top a:hover{{background:#388bfd33;text-decoration:none}}
+#chart{{position:relative}}.bar-icon{{position:absolute;pointer-events:none;z-index:4}}
 </style></head><body>
 <h1>AD-100 run scores</h1>
-<p>Final score = challenge weight × partial score, {scale}. Click a header to sort. <b>Score / s</b> and <b>Score / 1k tok</b> are derived from score, avg time/task, and avg tokens/task. <a href="{TRAJECTORIES_FILE}">Trajectories &rarr;</a></p>
+<p>Final score = challenge weight × partial score, {scale}. Click a header to sort. <b>Score / s</b> and <b>Score / 1k tok</b> are derived from score, avg time/task, and avg tokens/task.</p>
+<div class="top"><a href="{TRAJECTORIES_FILE}"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2v12h12"/><path d="M4.5 10l3-3.5 2.5 2L14 4.5"/></svg>Trajectories &rarr;</a></div>
+<div id="chart" style="height:460px;max-width:1000px;margin:0 0 1.2rem"></div>
 <table id="t"><thead><tr><th>#</th><th>Run</th><th class="n">Passed</th><th class="n">Failed</th><th class="n">Error</th><th class="n">Final score</th><th class="n">Avg tokens/task</th><th class="n">Avg time/task</th><th class="n">Score / s</th><th class="n">Score / 1k tok</th><th>% of max</th></tr></thead>
 <tbody>
 {chr(10).join(body)}
 </tbody></table>
+<script src="plotly-cartesian-4.3.0.min.js"></script>
 <script>
 const tb=document.querySelector('tbody'),ths=[...document.querySelectorAll('th')];
-let last=-1,dir=1;
+const gd=document.getElementById('chart');
+let last=-1,dir=1,cur=null;
+// One 16px logo under each bar, between the axis line and the tick labels
+// (ticklabelstandoff reserves that band; the vendored cartesian build has
+// no tickpadding). Plot-area bottom is _size.t+_size.h. Re-run on every
+// plotly render -- initial, table-sort redraws, responsive resizes -- so
+// the icons track the bars; fixedrange keeps the axes static meanwhile.
+function placeIcons(){{
+  const L=gd._fullLayout;
+  gd.querySelectorAll('.bar-icon').forEach(e=>e.remove());
+  if(!L||!L._size||!cur)return;
+  const step=L._size.w/cur.length;
+  cur.forEach((d,i)=>{{
+    const el=document.createElement('div');
+    el.className='bar-icon';
+    el.style.left=(L._size.l+(i+.5)*step-8)+'px';
+    el.style.top=(L._size.t+L._size.h+3)+'px';
+    const img=document.createElement('img');
+    img.src='assets/'+d[11];img.width=16;img.height=16;img.alt='';
+    el.appendChild(img);
+    gd.appendChild(el);
+  }});
+}}
+function draw(){{
+  const rs=[...tb.rows].map(r=>JSON.parse(r.dataset.s));
+  cur=rs;
+  const sc=rs.map(d=>d[5]),lo=Math.min(...sc),hi=Math.max(...sc);
+  // gd.on only exists after the first render, so subscribe there (once);
+  // plotly_afterplot then covers sort redraws and responsive resizes.
+  Plotly.react('chart',[{{type:'bar',x:rs.map(d=>d[1]),y:rs.map(d=>d[5]),
+    marker:{{color:'#3fb950'}},text:rs.map(d=>d[5].toFixed(1)),textposition:'outside',cliponaxis:false,
+    hovertemplate:'%{{x}}<br>score %{{y:.2f}}<extra></extra>'}}],
+    {{paper_bgcolor:'#0d1117',plot_bgcolor:'#0d1117',font:{{color:'#e6edf3'}},
+     margin:{{t:30,l:50,r:10,b:10}},
+     xaxis:{{tickangle:-90,automargin:true,type:'category',ticklabelstandoff:18,fixedrange:true}},
+     yaxis:{{title:'Final score',gridcolor:'#21262d',range:[lo,hi+(hi-lo)*.08],fixedrange:true}}}},
+    {{displayModeBar:false,responsive:true}})
+    .then(()=>{{
+      if(!gd._iconsSub){{gd._iconsSub=true;gd.on('plotly_afterplot',placeIcons);}}
+      placeIcons();
+    }});
+}}
+draw();
 const nat=new Intl.Collator(undefined,{{numeric:true,sensitivity:'base'}});
 ths.forEach((th,i)=>th.addEventListener('click',()=>{{
   dir=(last===i)?-dir:(i===1?1:-1);last=i;
   const rs=[...tb.rows].map(r=>({{r,d:JSON.parse(r.dataset.s)}}));
   rs.sort((a,b)=>{{const x=a.d[i],y=b.d[i];return (typeof x==='string'?nat.compare(x,y):x-y)*dir}});
   rs.forEach(o=>tb.appendChild(o.r));
+  draw();
 }}));
 </script></body></html>"""
 
@@ -369,6 +439,18 @@ def ensure_plotly(summary_dir: str) -> None:
               f"{TRAJECTORIES_FILE} will not render", file=sys.stderr)
 
 
+def ensure_assets(summary_dir: str) -> None:
+    """Copy missing bundled logos into a custom summary directory."""
+    source = Path(HERE) / "assets"
+    target = Path(summary_dir) / "assets"
+    if source.resolve() == target.resolve():
+        return
+    target.mkdir(parents=True, exist_ok=True)
+    for asset in source.iterdir():
+        if asset.is_file() and not (target / asset.name).exists():
+            shutil.copyfile(asset, target / asset.name)
+
+
 def main() -> int:
     """Update the summary artifacts and index from the runs directory."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -386,7 +468,8 @@ def main() -> int:
     if not os.path.isdir(args.runs_dir):
         print(f"runs directory not found: {args.runs_dir}", file=sys.stderr)
         return 2
-    os.makedirs(args.summary_dir, exist_ok=True)
+    if not args.dry_run:
+        os.makedirs(args.summary_dir, exist_ok=True)
 
     runs = discover_runs(args.runs_dir)
     if not runs:
@@ -394,14 +477,14 @@ def main() -> int:
         return 1
     reports, digests = {}, {}
     for run_id, run_dir in runs:
-        data, digest = load_report(run_dir)
-        # Read title.txt directly: it may be added to old runs after their
-        # report.json was last generated.
-        title = report.load_title_file(Path(run_dir))
+        data, raw = load_report(run_dir)
+        # Read the title separately because it may have changed since the report.
+        model = (data.get("model") or {}).get("name") or "unknown"
+        title, title_bytes = title_for_summary(run_dir, run_id, model)
         if title:
             data["title"] = title
         reports[run_id] = data
-        digests[run_id] = digest
+        digests[run_id] = hashlib.sha256(raw + title_bytes).hexdigest()
 
     mapping = load_map(args.summary_dir)
     if not os.path.exists(os.path.join(args.summary_dir, MAP_FILE)):
@@ -455,8 +538,11 @@ def main() -> int:
         if previous and previous != name:
             old = os.path.join(args.summary_dir, previous)
             if os.path.isfile(old):
-                os.remove(old)
-                print(f"  removed stale artifact {previous}")
+                if args.dry_run:
+                    print(f"  dry run: would remove stale artifact {previous}")
+                else:
+                    os.remove(old)
+                    print(f"  removed stale artifact {previous}")
 
         if args.dry_run:
             print(f"  dry run: would re-render {totals_path(run_dir)} -> {name}")
@@ -484,6 +570,7 @@ def main() -> int:
         save_map(args.summary_dir, mapping)
         report.atomic_write(Path(args.summary_dir) / INDEX_FILE, index_page)
         ensure_plotly(args.summary_dir)
+        ensure_assets(args.summary_dir)
         report.atomic_write(Path(args.summary_dir) / TRAJECTORIES_FILE, trajectories_page)
         print(f"\nrendered {rendered} run report(s); rewrote {INDEX_FILE} with "
               f"{len(index_rows)} rows and {TRAJECTORIES_FILE}")
