@@ -79,6 +79,11 @@
     "digest": "9d77322d6c75f256bbde7d8c5439a5bb000a6b6a30f79b3d45af144f3b35b2a0",
     "redacted": true
   },
+  "occamy-1.0-Q4_K_M": {
+    "file": "Accio-Lab_occamy-1.0_Q4_K_M.html",
+    "digest": "16714ebf37eb509ed2380be4b0e7d1818acbc4d4d86fb4fea417afd4f50d3eff",
+    "redacted": true
+  },
   "ornith1.5_35b_q4": {
     "file": "Ornith-1.5-35B-A3B_Q4_K_M.html",
     "digest": "771c0e52cb43e0e2b9fcbd46a49ac43a2fba026a16115b02c4426306b9c5c64b",
