@@ -44,6 +44,11 @@
     "digest": "193ddbbee96dde0817d68f955932ad6fe5e76ae9f5692e81e550bc419c00987c",
     "redacted": true
   },
+  "Qwen3.8-Flash-Next-UD3.1-IQ4_XS": {
+    "file": "Qwen3.8-Flash-Next_UD-IQ4_XS.html",
+    "digest": "cb844526bc334b1146f05399786182d6b3ac9fc04b1d6e600f30a8694ef092de",
+    "redacted": true
+  },
   "Swift-1.5-Qwen3.8-27B-IQ4_NL_xhigh": {
     "file": "Swift-1.5-Qwen3.8-27B_IQ4_NL.html",
     "digest": "07a2ab2257522af299bb268e2f9760ae253770db4e305c2613ca2de8cd91cdf7",
