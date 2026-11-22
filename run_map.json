@@ -9,6 +9,11 @@
     "digest": "5596dc00040dd605f774c9d916644b91e0be62054ea4f8c07321dc5c599e8b9c",
     "redacted": true
   },
+  "Inkling-2-Mini-Q8": {
+    "file": "Inkling-2-Mini_Q8_0.html",
+    "digest": "46823d7523369905f5c759124aa0b020eba929d996b26c84c61907f0e774a7ed",
+    "redacted": true
+  },
   "MiniCPM-V-4.7-35B-A3B-Q4": {
     "file": "MiniCPM-V-4.7-35B-A3B_Q4_K_M.html",
     "digest": "430acae3bd6c54c91f52958b7ff84a1c93fd868f9d6130703a0282a199890e5a",
@@ -32,6 +37,11 @@
   "Qwen3.8-27B-UD-Q2_K_XL_v3.1": {
     "file": "Qwen3.8-27B_UD-Q2_K_XL-2.html",
     "digest": "348b6875d7d1272b73a5da072a7b2db860cf11667064ea9c91332fa3d80ce24b",
+    "redacted": true
+  },
+  "Qwen3.8-27B-pi": {
+    "file": "Qwen3.8-27B-pi-adapted_Q4_K_M.html",
+    "digest": "77531065b72fdac6b84ca2ef1e223b6c5b4f79121ba419050f24de5acedaecae",
     "redacted": true
   },
   "Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M": {
