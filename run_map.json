@@ -9,6 +9,11 @@
     "digest": "a24e11e081e737d4d3f91159f85925329f7acfd40f1575a57640c35a3f454964",
     "redacted": true
   },
+  "DaisyRose-27B-Q4_K_XL-maxtok65536": {
+    "file": "DaisyRose-27B_Q4_K_XL-2.html",
+    "digest": "ace6a27a06d4ceaaf57574b5568c6da493c9729d7bb8e8d7136bd221dcc4bcfb",
+    "redacted": true
+  },
   "Flint-Q4": {
     "file": "flint_UD-Q4_K_XL.html",
     "digest": "5596dc00040dd605f774c9d916644b91e0be62054ea4f8c07321dc5c599e8b9c",
@@ -17,6 +22,11 @@
   "ISTA-DASLab-Qwen3.8-27B-GSQ-RCO-IQ3S": {
     "file": "Qwen3.8-27B-GSQ-RCO_IQ3_S.html",
     "digest": "1372af276eb9fb94ff4afb1f1edea01d49c2d49334501b25ff5891c25281cab4",
+    "redacted": true
+  },
+  "ISTA-DASLab-Qwen3.8-27B-GSQ-RCO-IQ3S-maxtok65536": {
+    "file": "Qwen3.8-27B-GSQ-RCO_IQ3_S-2.html",
+    "digest": "4d6421d84f51add30d2c083e40c450c359fa942f1b8ca7ee58c7fd0261a1f85e",
     "redacted": true
   },
   "Inkling-2-Mini-Q8": {
@@ -54,9 +64,19 @@
     "digest": "2b31de108ddf832a1ecae88b26fe3b6eb2fdf66ce249587ac080987f6927962a",
     "redacted": true
   },
+  "Qwen3.8-27B-byteshape-IQ4_XS-maxtok65536": {
+    "file": "Qwen3.8-27B_Qwen3.8-27B-IQ4_XS-3.84bpw.html",
+    "digest": "ec045e660b116ccacd56848ea845e9ca8cc40928549a3a9bbaf398dbc7bc97a9",
+    "redacted": true
+  },
   "Qwen3.8-27B-pi": {
     "file": "Qwen3.8-27B-pi-adapted_Q4_K_M.html",
     "digest": "77531065b72fdac6b84ca2ef1e223b6c5b4f79121ba419050f24de5acedaecae",
+    "redacted": true
+  },
+  "Qwen3.8-27B-unsloth-UD3-Q4_K_XL-maxtok65536": {
+    "file": "Qwen3.8-27B-unsloth-UD3-Q4_K_XL.gguf.html",
+    "digest": "f7525de0aaa2bee00e59111af610a3d4c51cd1a190146af1c04ed2ec3d5c65e3",
     "redacted": true
   },
   "Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M": {
@@ -109,6 +129,11 @@
     "digest": "9d77322d6c75f256bbde7d8c5439a5bb000a6b6a30f79b3d45af144f3b35b2a0",
     "redacted": true
   },
+  "nemotron_35_bolt-maxtok65536": {
+    "file": "NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-2.html",
+    "digest": "1637e12ae7e2cdc41fb47335504bbca7f33b677a3c5311dad1146cd7dca62c2f",
+    "redacted": true
+  },
   "occamy-1.0-Q4_K_M": {
     "file": "Accio-Lab_occamy-1.0_Q4_K_M.html",
     "digest": "16714ebf37eb509ed2380be4b0e7d1818acbc4d4d86fb4fea417afd4f50d3eff",
@@ -122,6 +147,11 @@
   "qwen3.6_35b_q4": {
     "file": "Qwen3.6-35B-A3B_UD-Q4_K_XL.html",
     "digest": "06070ee19b266ef67bb739f4e2b32237fb9216e0376626f628e2d3af9a4767c1",
+    "redacted": true
+  },
+  "qwen3.6_35b_q4-maxtok65536": {
+    "file": "Qwen3.6-35B-A3B-MTP_UD-Q4_K_XL.html",
+    "digest": "39d98f2873b5b72bf1d6747a87c106d18a1e8c23bd5a7e4108ad7d3aeeeb31c7",
     "redacted": true
   },
   "qwen3.8_27b_Q4": {
