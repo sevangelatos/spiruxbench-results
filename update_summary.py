@@ -302,20 +302,22 @@ def render_index(rows: list) -> str:
             logo = report.GENERIC_LOGO
         # data-s order must match the <th> order: pct stays last (% of max).
         # Index 11 holds the chart-bar icon and is not a sortable column.
+        # Index 12 holds the run's results filename (used by the chart's
+        # clickable bar links) and is also not a sortable column.
         data = html.escape(json.dumps([i, run_label, r["passed"], r["failed"],
                                       r["error"], round(score, 2), avg, avg_time_key,
                                       score_per_sec, score_per_1k, round(r["pct"], 2),
-                                      logo]))
+                                      logo, r["artifact"]]))
         bar = round(r["pct"], 1)
         avg_time_str = f"{report.compact(avg_time)}s" if avg_time is not None else '—'
         score_per_sec_str = f"{score / avg_time:.3f}" if avg_time else '—'
         score_per_1k_str = f"{score * 1000 / avg_tokens:.3f}" if avg_tokens else '—'
-        logo_img = f'<img src="assets/{html.escape(logo, quote=True)}" width="16" height="16" style="flex-shrink:0">'
+        logo_img = f'<img src="assets/{html.escape(logo, quote=True)}" width="32" height="32" style="flex-shrink:0">'
         body.append(
             f'<tr data-s="{data}"><td>{i}</td>\n'
-            f'<td style="display:flex;align-items:center;gap:.5rem">{logo_img}'
+            f'<td class="run-col"><div class="run-cell">{logo_img}'
             f'<a href="{href}">{html.escape(run_label)}</a>'
-            f'<div class="m">{html.escape(sub_label)}</div></td>\n'
+            f'<div class="m">{html.escape(sub_label)}</div></div></td>\n'
             f'<td class="n">{r["passed"]}</td><td class="n">{r["failed"]}</td>'
             f'<td class="n">{r["error"]}</td>\n'
             f'<td class="n">{score:.2f} <span class="d">/ {r["max_possible"]:.2f}</span></td>\n'
@@ -350,16 +352,28 @@ a{{color:#58a6ff;text-decoration:none}}a:hover{{text-decoration:underline}}
 .bar i{{display:block;height:100%;background:#3fb950;border-radius:4px}}
 .top{{margin:0 0 1rem}}
 .top a{{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .75rem;border:1px solid #58a6ff;border-radius:999px;background:#388bfd1a;font-weight:600}}.top a:hover{{background:#388bfd33;text-decoration:none}}
+.run-cell{{display:flex;align-items:center;gap:.6rem;min-width:11rem}}
+.table-wrap{{overflow-x:auto;max-width:1000px}}
+.chart-wrap{{overflow-x:auto;max-width:1000px;margin:0 0 1.2rem}}
+#t{{min-width:920px}}
+#t th,#t td{{box-sizing:border-box}}
+#t th:nth-child(1),#t td:nth-child(1){{position:sticky;left:0;width:2.4rem;min-width:2.4rem;background:#0d1117;z-index:1;padding:.55rem .5rem;text-align:right}}
+#t th.run-col,#t td.run-col{{position:sticky;left:2.4rem;background:#0d1117;z-index:1}}
+#t th:nth-child(1),#t th.run-col{{z-index:2}}
+#t td:nth-child(1),#t td.run-col{{box-shadow:1px 0 0 #21262d}}
 #chart{{position:relative}}.bar-icon{{position:absolute;pointer-events:none;z-index:4}}
+.bar-link{{position:absolute;cursor:pointer;z-index:3}}
+.bar-link:hover{{background:#3fb95014}}
+@media (max-width:640px){{body{{padding:1rem}}h1{{font-size:1.15rem}}#chart{{min-width:900px}}.run-cell{{min-width:0;max-width:min(240px,60vw)}}.run-cell a,.run-cell .m{{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}}}
 </style></head><body>
 <h1>AD-100 run scores</h1>
 <p>Final score = challenge weight × partial score, {scale}. Click a header to sort. <b>Score / s</b> and <b>Score / 1k tok</b> are derived from score, avg time/task, and avg tokens/task.</p>
 <div class="top"><a href="{TRAJECTORIES_FILE}"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2v12h12"/><path d="M4.5 10l3-3.5 2.5 2L14 4.5"/></svg>Trajectories &rarr;</a></div>
-<div id="chart" style="height:460px;max-width:1000px;margin:0 0 1.2rem"></div>
-<table id="t"><thead><tr><th>#</th><th>Run</th><th class="n">Passed</th><th class="n">Failed</th><th class="n">Error</th><th class="n">Final score</th><th class="n">Avg tokens/task</th><th class="n">Avg time/task</th><th class="n">Score / s</th><th class="n">Score / 1k tok</th><th>% of max</th></tr></thead>
+<div class="chart-wrap"><div id="chart" style="height:460px"></div></div>
+<div class="table-wrap"><table id="t"><thead><tr><th>#</th><th class="run-col">Run</th><th class="n">Passed</th><th class="n">Failed</th><th class="n">Error</th><th class="n">Final score</th><th class="n">Avg tokens/task</th><th class="n">Avg time/task</th><th class="n">Score / s</th><th class="n">Score / 1k tok</th><th>% of max</th></tr></thead>
 <tbody>
 {chr(10).join(body)}
-</tbody></table>
+</tbody></table></div>
 <script src="plotly-cartesian-4.3.0.min.js"></script>
 <script>
 const tb=document.querySelector('tbody'),ths=[...document.querySelectorAll('th')];
@@ -386,23 +400,45 @@ function placeIcons(){{
     gd.appendChild(el);
   }});
 }}
+// One <a> link per bar covering the bar and its rotated tick label band, so
+// clicking either the bar or the label opens that run's results page. The
+// label band is the x-axis bottom margin (expanded by automargin for the
+// rotated labels). d[12] is the run's results filename from data-s.
+function placeLinks(){{
+  const L=gd._fullLayout;
+  gd.querySelectorAll('.bar-link').forEach(e=>e.remove());
+  if(!L||!L._size||!cur)return;
+  const step=L._size.w/cur.length;
+  const band=L._size.b||0;
+  cur.forEach((d,i)=>{{
+    const a=document.createElement('a');
+    a.className='bar-link';a.href=d[12];a.title=d[1];
+    a.style.left=(L._size.l+(i+.5)*step-step/2)+'px';
+    a.style.width=step+'px';
+    a.style.top=(L._size.t)+'px';
+    a.style.height=(L._size.h+band)+'px';
+    gd.appendChild(a);
+  }});
+}}
 function draw(){{
   const rs=[...tb.rows].map(r=>JSON.parse(r.dataset.s));
   cur=rs;
   const sc=rs.map(d=>d[5]),lo=Math.min(...sc),hi=Math.max(...sc);
   // gd.on only exists after the first render, so subscribe there (once);
   // plotly_afterplot then covers sort redraws and responsive resizes.
-  Plotly.react('chart',[{{type:'bar',x:rs.map(d=>d[1]),y:rs.map(d=>d[5]),
+  Plotly.react('chart',[{{type:'bar',x:rs.map((_,i)=>i),y:rs.map(d=>d[5]),
     marker:{{color:'#3fb950'}},text:rs.map(d=>d[5].toFixed(1)),textposition:'outside',cliponaxis:false,
-    hovertemplate:'%{{x}}<br>score %{{y:.2f}}<extra></extra>'}}],
+    customdata:rs.map(d=>d[1]),
+    hovertemplate:'%{{customdata}}<br>score %{{y:.2f}}<extra></extra>'}}],
     {{paper_bgcolor:'#0d1117',plot_bgcolor:'#0d1117',font:{{color:'#e6edf3'}},
      margin:{{t:30,l:50,r:10,b:10}},
-     xaxis:{{tickangle:-90,automargin:true,type:'category',ticklabelstandoff:18,fixedrange:true}},
+     xaxis:{{tickangle:-90,automargin:true,type:'linear',tickvals:rs.map((_,i)=>i),
+       ticktext:rs.map(d=>d[1]),range:[-0.5,rs.length-0.5],ticklabelstandoff:18,fixedrange:true}},
      yaxis:{{title:'Final score',gridcolor:'#21262d',range:[lo,hi+(hi-lo)*.08],fixedrange:true}}}},
     {{displayModeBar:false,responsive:true}})
     .then(()=>{{
-      if(!gd._iconsSub){{gd._iconsSub=true;gd.on('plotly_afterplot',placeIcons);}}
-      placeIcons();
+      if(!gd._iconsSub){{gd._iconsSub=true;gd.on('plotly_afterplot',()=>{{placeIcons();placeLinks();}});}}
+      placeIcons();placeLinks();
     }});
 }}
 draw();
